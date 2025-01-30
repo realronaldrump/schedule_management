@@ -27,49 +27,84 @@ def room_heatmap(df: pd.DataFrame) -> None:
         aspect="auto"
     )
     
-    fig.update_layout(height=400)
+    fig.update_layout(
+        height=500,
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=14,
+            font_family="sans-serif"
+        )
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 def main():
-    st.title("🏫 Room Utilization")
+    st.title("🏫 Room Utilization Analysis")
+    st.markdown("---")
 
     # --- Filters in Sidebar ---
     with st.sidebar:
-        st.header("Filters")
-        selected_day = st.selectbox("Day", ["All"] + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])
-        selected_rooms = st.multiselect("Rooms", get_all_rooms())
+        st.header("🔍 Filters")
+        selected_day = st.selectbox("Select Day", ["All"] + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])
+        selected_rooms = st.multiselect("Select Rooms", get_all_rooms())
 
-    # --- Load and Filter Data ---
-    df = get_schedule_data(
+    # --- Load Data ---
+    today_day_name = datetime.datetime.now().strftime('%a')
+    df_today = get_schedule_data(meeting_day=today_day_name)  # For current utilization
+    df_filtered = get_schedule_data(  # For historical analysis
         meeting_day=None if selected_day == "All" else selected_day,
         rooms=selected_rooms
     )
 
-    # --- Room Utilization Metrics ---
-    total_rooms = len(get_all_rooms())
+    # --- Current Utilization Metrics ---
     now = datetime.datetime.now().time()
-    current_classes = df[
-        (df['Start Time'] <= now) & (df['End Time'] >= now)
+    current_classes = df_today[
+        (df_today['Start Time'] <= now) & 
+        (df_today['End Time'] >= now)
     ]
     rooms_in_use = current_classes['Room'].nunique()
+    total_rooms = len(get_all_rooms())
     available_rooms = total_rooms - rooms_in_use
 
-    st.metric(label="Total Rooms", value=total_rooms)
-    st.metric(label="Rooms in Use", value=rooms_in_use)
-    st.metric(label="Available Rooms", value=available_rooms)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-value">🏫 {total_rooms}</div>
+            <div class="metric-label">Total Rooms</div>
+        </div>''', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-value">📚 {rooms_in_use}</div>
+            <div class="metric-label">Currently In Use</div>
+        </div>''', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-value">✅ {available_rooms}</div>
+            <div class="metric-label">Available Now</div>
+        </div>''', unsafe_allow_html=True)
 
+    # --- Historical Analysis Section ---
+    st.markdown("---")
+    st.markdown("### Historical Utilization Patterns")
+    
     # --- Interactive Heatmap ---
-    room_heatmap(df)
+    room_heatmap(df_filtered)
 
-    # --- Room Details on Click (using st.session_state) ---
-    if 'clicked_room' not in st.session_state:
-        st.session_state.clicked_room = None
-
-    # Display details for the clicked room
-    if st.session_state.clicked_room:
-        st.markdown(f"#### Schedule for Room: {st.session_state.clicked_room}")
-        room_schedule = df[df['Room'] == st.session_state.clicked_room]
-        st.dataframe(room_schedule)
+    # --- Room Details Table ---
+    st.markdown("### Detailed Room Schedule")
+    if not df_filtered.empty:
+        df_display = df_filtered[['Meeting Day', 'Room', 'Course', 'Instructor', 'Start Time', 'End Time']]
+        st.dataframe(
+            df_display.sort_values(['Meeting Day', 'Start Time']),
+            use_container_width=True,
+            height=400
+        )
+    else:
+        st.info("No classes found for selected filters")
 
 if __name__ == "__main__":
     main()
