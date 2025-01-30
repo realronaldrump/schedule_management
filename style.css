@@ -1,0 +1,21 @@
+.card {
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: white;
+    margin-bottom: 20px;
+}
+.status-indicator {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: inline-block;
+}
+.in-session { background-color: #d4edda; color: #155724; }
+.upcoming { background-color: #fff3cd; color: #856404; }
+.available { background-color: #d1ecf1; color: #0c5460; }
+.time-display {
+    font-size: 2.5em;
+    font-weight: 300;
+    color: #2c3e50;
+}
