@@ -121,3 +121,24 @@ html {
     border-radius: 6px !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
+
+/* Room Status Grid */
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    margin-top: 1rem;
+}
+
+.room-item {
+    padding: 8px;
+    text-align: center;
+    border-radius: 6px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.occupied-room {
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
