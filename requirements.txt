@@ -4,3 +4,4 @@ plotly
 SQLAlchemy
 streamlit-autorefresh
 openpyxl
+pytz
