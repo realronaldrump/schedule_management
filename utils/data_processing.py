@@ -60,16 +60,21 @@ def load_and_process_data(uploaded_file) -> Optional[pd.DataFrame]:
             for day in days:
                 for room in rooms:
                     if day in DAYS_MAP:
-                        new_row = row.copy()
-                        new_row['Meeting Day'] = DAYS_MAP[day]
-                        new_row['Room'] = room
-                        new_row['Start Time'] = start_time
-                        new_row['End Time'] = end_time
+                        new_row = row.to_dict()
+                        new_row['meeting_day'] = DAYS_MAP[day]
+                        new_row['room'] = room
+                        new_row['start_time'] = start_time
+                        new_row['end_time'] = end_time
                         expanded.append(new_row)
         
         df_expanded = pd.DataFrame(expanded)
         
-        df_expanded = df_expanded.dropna(subset=['Start Time', 'End Time'])
+        # Cleanup and final columns
+        keep_columns = [
+            'Course', 'Course Title', 'meeting_day',
+            'start_time', 'end_time', 'Instructor', 'room'
+        ]
+        df_expanded = df_expanded[keep_columns].dropna(subset=['start_time', 'end_time'])
 
         return df_expanded
 

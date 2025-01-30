@@ -1,6 +1,6 @@
 import sqlite3
 import pandas as pd
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 DATABASE_FILE = "data/schedule_data.db"
 
@@ -14,8 +14,8 @@ def create_database() -> None:
             course TEXT,
             course_title TEXT,
             meeting_day TEXT,
-            start_time TEXT,  -- Store as TEXT for simplicity (or TIME if you prefer and adjust parsing)
-            end_time TEXT,    -- Store as TEXT for simplicity (or TIME if you prefer and adjust parsing)
+            start_time TEXT,
+            end_time TEXT,
             instructor TEXT,
             room TEXT
         )
@@ -26,7 +26,15 @@ def create_database() -> None:
 def insert_data(df: pd.DataFrame) -> None:
     """Inserts data from a DataFrame into the database."""
     conn = sqlite3.connect(DATABASE_FILE)
-    df.to_sql('schedule', conn, if_exists='replace', index=False) # 'replace' will recreate the table if schema changed
+    
+    # Rename columns to match database schema
+    df = df.rename(columns={
+        'Course': 'course',
+        'Course Title': 'course_title',
+        'Instructor': 'instructor'
+    })
+    
+    df.to_sql('schedule', conn, if_exists='replace', index=False)
     conn.close()
 
 def get_schedule_data(
@@ -37,7 +45,7 @@ def get_schedule_data(
     """Retrieves schedule data from the database with optional filters."""
     conn = sqlite3.connect(DATABASE_FILE)
     query = "SELECT * FROM schedule WHERE 1=1"
-    params: Dict[str, Any] = {}
+    params = {}
 
     if meeting_day:
         query += " AND meeting_day = :meeting_day"
@@ -54,9 +62,19 @@ def get_schedule_data(
 
     df = pd.read_sql_query(query, conn, params=params)
 
-    # Convert 'start_time' and 'end_time' back to datetime.time objects after reading from DB
+    # Convert time columns
     df['Start Time'] = pd.to_datetime(df['start_time']).dt.time
     df['End Time'] = pd.to_datetime(df['end_time']).dt.time
+    
+    # Clean up column names for display
+    df = df.rename(columns={
+        'course': 'Course',
+        'course_title': 'Course Title',
+        'instructor': 'Instructor',
+        'room': 'Room',
+        'meeting_day': 'Meeting Day'
+    })
+    
     conn.close()
     return df
 
@@ -64,22 +82,14 @@ def get_all_instructors() -> List[str]:
     """Retrieves a list of all instructors."""
     conn = sqlite3.connect(DATABASE_FILE)
     instructors = pd.read_sql_query("SELECT DISTINCT instructor FROM schedule", conn)
-    if not instructors.empty: # Check if DataFrame is empty before accessing columns
-        instructors = instructors['instructor'].tolist()
-    else:
-        instructors = []
     conn.close()
-    return instructors
+    return instructors['instructor'].tolist() if not instructors.empty else []
 
 def get_all_rooms() -> List[str]:
     """Retrieves a list of all rooms."""
     conn = sqlite3.connect(DATABASE_FILE)
     rooms_df = pd.read_sql_query("SELECT DISTINCT room FROM schedule", conn)
-    if not rooms_df.empty: # Check if DataFrame is empty before accessing columns
-        rooms = rooms_df['room'].tolist()
-    else:
-        rooms = []
     conn.close()
-    return rooms
+    return rooms_df['room'].tolist() if not rooms_df.empty else []
 
-create_database()  # Initialize the database on startup
+create_database()
