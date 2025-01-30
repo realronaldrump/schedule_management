@@ -62,10 +62,10 @@ def get_schedule_data(
 
     df = pd.read_sql_query(query, conn, params=params)
 
-    # Convert time columns
-    df['Start Time'] = pd.to_datetime(df['start_time']).dt.time
-    df['End Time'] = pd.to_datetime(df['end_time']).dt.time
-    
+    # Convert time columns and set timezone
+    df['Start Time'] = pd.to_datetime(df['start_time']).dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
+    df['End Time'] = pd.to_datetime(df['end_time']).dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
+
     # Clean up column names for display
     df = df.rename(columns={
         'course': 'Course',
@@ -74,7 +74,7 @@ def get_schedule_data(
         'room': 'Room',
         'meeting_day': 'Meeting Day'
     })
-    
+
     conn.close()
     return df
 
