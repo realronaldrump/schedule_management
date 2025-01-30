@@ -1,5 +1,5 @@
 # Ignore database files
-*.db
+# *.db
 
 # Ignore Python cache
 __pycache__/
@@ -9,4 +9,4 @@ venv/
 
 # Ignore VS Code settings (optional)
 .vscode/
-data/schedule_data.db
+# data/schedule_data.db
