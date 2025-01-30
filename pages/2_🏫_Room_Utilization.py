@@ -3,8 +3,10 @@ import pandas as pd
 import plotly.express as px
 from utils.database import get_schedule_data, get_all_rooms
 import datetime
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Room Utilization", page_icon="🏫")
+st_autorefresh(interval=10000, key="util_refresh")  # 10-second refresh
 
 def room_heatmap(df: pd.DataFrame) -> None:
     st.markdown("### Room Utilization Heatmap")
@@ -47,59 +49,83 @@ def main():
         selected_day = st.selectbox("Select Day", ["All"] + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])
         selected_rooms = st.multiselect("Select Rooms", get_all_rooms())
 
-    # --- Load Data ---
+    # --- Current Room Status ---
+    st.markdown("### Real-Time Room Status")
+    
+    # Get current utilization data
     today_day_name = datetime.datetime.now().strftime('%a')
-    df_today = get_schedule_data(meeting_day=today_day_name)  # For current utilization
-    df_filtered = get_schedule_data(  # For historical analysis
-        meeting_day=None if selected_day == "All" else selected_day,
-        rooms=selected_rooms
-    )
-
-    # --- Current Utilization Metrics ---
+    df_today = get_schedule_data(meeting_day=today_day_name)
     now = datetime.datetime.now().time()
+    
+    # Calculate room statuses
+    all_rooms = get_all_rooms()
     current_classes = df_today[
         (df_today['Start Time'] <= now) & 
         (df_today['End Time'] >= now)
     ]
-    rooms_in_use = current_classes['Room'].nunique()
-    total_rooms = len(get_all_rooms())
-    available_rooms = total_rooms - rooms_in_use
+    occupied_rooms = current_classes['Room'].unique().tolist()
+    available_rooms = list(set(all_rooms) - set(occupied_rooms))
+    
+    # Sort rooms naturally
+    occupied_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
+    available_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
 
-    col1, col2, col3 = st.columns(3)
+    # Display room status columns
+    col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="metric-value">🏫 {total_rooms}</div>
-            <div class="metric-label">Total Rooms</div>
-        </div>''', unsafe_allow_html=True)
-    
+        st.markdown(f'<div class="metric-card" style="background-color: #fee2e2;">'
+                    f'<div class="metric-value">🚫 {len(occupied_rooms)}</div>'
+                    f'<div class="metric-label">Occupied Rooms</div></div>', 
+                    unsafe_allow_html=True)
+        
+        if occupied_rooms:
+            with st.expander("View Occupied Rooms", expanded=True):
+                for room in occupied_rooms:
+                    classes = current_classes[current_classes['Room'] == room]
+                    st.markdown(f"""
+                    **{room}**  
+                    {classes.iloc[0]['Start Time'].strftime('%I:%M %p')} - {classes.iloc[0]['End Time'].strftime('%I:%M %p')}  
+                    *{classes.iloc[0]['Course']} - {classes.iloc[0]['Course Title']}*  
+                    👩🏫 {classes.iloc[0]['Instructor']}
+                    """)
+                    if len(classes) > 1:
+                        st.caption(f"+ {len(classes)-1} more concurrent classes")
+        else:
+            st.info("No rooms currently in use")
+
     with col2:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="metric-value">📚 {rooms_in_use}</div>
-            <div class="metric-label">Currently In Use</div>
-        </div>''', unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f'''
-        <div class="metric-card">
-            <div class="metric-value">✅ {available_rooms}</div>
-            <div class="metric-label">Available Now</div>
-        </div>''', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-card" style="background-color: #dcfce7;">'
+                    f'<div class="metric-value">✅ {len(available_rooms)}</div>'
+                    f'<div class="metric-label">Available Rooms</div></div>', 
+                    unsafe_allow_html=True)
+        
+        if available_rooms:
+            with st.expander("View Available Rooms", expanded=True):
+                cols = st.columns(3)
+                for i, room in enumerate(available_rooms):
+                    cols[i%3].markdown(f"🏫 {room}")
+        else:
+            st.warning("All rooms are currently occupied")
 
     # --- Historical Analysis Section ---
     st.markdown("---")
     st.markdown("### Historical Utilization Patterns")
     
-    # --- Interactive Heatmap ---
+    # Load filtered data
+    df_filtered = get_schedule_data(
+        meeting_day=None if selected_day == "All" else selected_day,
+        rooms=selected_rooms
+    )
+    
+    # Interactive Heatmap
     room_heatmap(df_filtered)
 
-    # --- Room Details Table ---
-    st.markdown("### Detailed Room Schedule")
+    # Detailed Schedule
+    st.markdown("#### Detailed Schedule")
     if not df_filtered.empty:
-        df_display = df_filtered[['Meeting Day', 'Room', 'Course', 'Instructor', 'Start Time', 'End Time']]
         st.dataframe(
-            df_display.sort_values(['Meeting Day', 'Start Time']),
+            df_filtered[['Meeting Day', 'Room', 'Course', 'Instructor', 'Start Time', 'End Time']]
+            .sort_values(['Meeting Day', 'Start Time']),
             use_container_width=True,
             height=400
         )
