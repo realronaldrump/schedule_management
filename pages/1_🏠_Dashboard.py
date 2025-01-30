@@ -4,13 +4,15 @@ from streamlit_autorefresh import st_autorefresh
 from utils.database import get_schedule_data, get_all_rooms
 import plotly.express as px
 import pandas as pd
+import pytz
 
 # --- Configuration and Auto-Refresh ---
 st.set_page_config(page_title="Dashboard", page_icon="🏠")
 st_autorefresh(interval=10000, key="dashboard_refresh")
 
 def get_current_time_and_week():
-    now = datetime.datetime.now()
+    central = pytz.timezone('US/Central')
+    now = datetime.datetime.now(datetime.timezone.utc).astimezone(central)
     return now.strftime("%I:%M %p"), now.strftime('%A, %b %d %Y'), now.isocalendar()[1]
 
 def create_timeline_chart(df: pd.DataFrame) -> None:
