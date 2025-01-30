@@ -1,21 +1,123 @@
+/* Base Styles */
+html {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Main Content Padding */
+.main .block-container {
+    padding: 2rem 1rem;
+}
+
+/* Cards */
 .card {
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    border-radius: 12px;
     background: white;
-    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #4F46E5;
+    transition: transform 0.2s ease;
 }
-.status-indicator {
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: 500;
-    display: inline-block;
+
+.card:hover {
+    transform: translateY(-2px);
 }
-.in-session { background-color: #d4edda; color: #155724; }
-.upcoming { background-color: #fff3cd; color: #856404; }
-.available { background-color: #d1ecf1; color: #0c5460; }
+
+/* Metrics */
+.metric-card {
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.metric-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #718096;
+    margin-top: 0.5rem;
+}
+
+/* Time Display */
 .time-display {
-    font-size: 2.5em;
+    font-size: 2.8rem;
     font-weight: 300;
-    color: #2c3e50;
+    color: #4F46E5;
+    letter-spacing: -0.05em;
+}
+
+/* Navigation */
+.sidebar .sidebar-content {
+    background: #f8f9fa;
+    border-right: 1px solid #e2e8f0;
+}
+
+/* Data Tables */
+.stDataFrame {
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Badges */
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-primary {
+    background: #e0e7ff;
+    color: #4F46E5;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+/* Hover Effects */
+.hover-shadow {
+    transition: box-shadow 0.2s ease;
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* Instructor Cards */
+.instructor-card {
+    padding: 1rem;
+    margin: 0.5rem 0;
+    background: white;
+    border-left: 3px solid #818cf8;
+    border-radius: 8px;
+}
+
+/* Heatmap Tooltip */
+.heatmap-tooltip {
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
 }
