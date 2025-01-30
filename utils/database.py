@@ -45,26 +45,26 @@ def get_schedule_data(
     """Retrieves schedule data from the database with optional filters."""
     conn = sqlite3.connect(DATABASE_FILE)
     query = "SELECT * FROM schedule WHERE 1=1"
-    params = {}
+    params = []
 
     if meeting_day:
-        query += " AND meeting_day = :meeting_day"
-        params["meeting_day"] = meeting_day
+        query += " AND meeting_day = ?"
+        params.append(meeting_day)
 
     if rooms:
         placeholders = ', '.join(['?'] * len(rooms))
         query += f" AND room IN ({placeholders})"
-        params = {**params, **{f"room{i}": room for i, room in enumerate(rooms)}}
+        params.extend(rooms)
 
     if instructor:
-        query += " AND instructor = :instructor"
-        params["instructor"] = instructor
+        query += " AND instructor = ?"
+        params.append(instructor)
 
     df = pd.read_sql_query(query, conn, params=params)
 
-    # Convert time columns and set timezone
-    df['Start Time'] = pd.to_datetime(df['start_time']).dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
-    df['End Time'] = pd.to_datetime(df['end_time']).dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
+    # Convert time columns and set timezone with explicit format
+    df['Start Time'] = pd.to_datetime(df['start_time'], format='%H:%M:%S').dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
+    df['End Time'] = pd.to_datetime(df['end_time'], format='%H:%M:%S').dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
 
     # Clean up column names for display
     df = df.rename(columns={
