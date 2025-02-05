@@ -8,19 +8,28 @@ def main():
     st.title("🧑🏫 Instructor Schedules")
 
     # --- Select Instructor ---
-    instructor = st.selectbox("Select Instructor", get_all_instructors())
-
-    # --- Filter Data ---
-    df = get_schedule_data(instructor=instructor)
+    instructors = get_all_instructors()
+    if not instructors:
+        st.info("No instructors found in the database.")
+        return
+    instructor = st.selectbox("Select Instructor", instructors)
 
     # --- Display Schedule ---
+    df = get_schedule_data(instructor=instructor)
+
     if not df.empty:
         # --- Filters in Sidebar ---
         with st.sidebar:
             st.header("Filters")
-            selected_day = st.selectbox("Day", ["All"] + ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], index=datetime.datetime.now().weekday() + 1)
+            weekday = datetime.datetime.now().weekday()
+            default_day_index = weekday + 1 if weekday < 5 else 0
+            selected_day = st.selectbox(
+                "Day",
+                ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                index=default_day_index
+            )
             
-        # --- Load and Filter Data ---
+        # --- Filter Data by Day and Instructor ---
         df = get_schedule_data(
             meeting_day=None if selected_day == "All" else selected_day[:3],
             instructor=instructor

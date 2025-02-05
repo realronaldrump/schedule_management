@@ -1,6 +1,5 @@
 import streamlit as st
 from utils.database import get_schedule_data, get_all_rooms
-import pandas as pd
 import datetime
 
 st.set_page_config(page_title="Detailed Schedule", page_icon="📅")
@@ -11,7 +10,15 @@ def main():
     # --- Filters in Sidebar ---
     with st.sidebar:
         st.header("Filters")
-        selected_day = st.selectbox("Day", ["All"] + ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], index=datetime.datetime.now().weekday() + 1)
+        # Calculate a default index: if current weekday (0=Mon,...,6=Sun) is between 0 and 4, use it;
+        # otherwise default to 0 ("All")
+        weekday = datetime.datetime.now().weekday()  # 0-6
+        default_day_index = weekday + 1 if weekday < 5 else 0
+        selected_day = st.selectbox(
+            "Day",
+            ["All", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            index=default_day_index
+        )
         selected_rooms = st.multiselect("Rooms", get_all_rooms())
         
     # --- Load and Filter Data ---

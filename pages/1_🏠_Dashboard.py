@@ -20,11 +20,17 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
         st.warning("No schedule data for selected day")
         return
 
-    # Create datetime objects with today's date
+    # Force the "Room" column to be treated as categorical by converting to string.
+    df['Room'] = df['Room'].astype(str)
+
+    # Create datetime objects for today using the times from the schedule
     base_date = datetime.date.today()
     df = df.copy()
     df['Start'] = df['Start Time'].apply(lambda t: datetime.datetime.combine(base_date, t))
     df['End'] = df['End Time'].apply(lambda t: datetime.datetime.combine(base_date, t))
+
+    # Define category order for rooms, sorted numerically
+    room_categories = sorted(df['Room'].unique(), key=lambda x: int(x))
 
     fig = px.timeline(
         df,
@@ -35,17 +41,39 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
         title="Live Schedule Timeline",
         labels={'Room': 'Room Number'},
         hover_data=['Course Title', 'Instructor'],
-        color_discrete_sequence=px.colors.qualitative.Pastel
+        color_discrete_sequence=px.colors.qualitative.Pastel,
+        category_orders={"Room": room_categories}  # Use explicit categorical ordering.
     )
 
-    # Add current time line
-    now = datetime.datetime.now()
-    fig.add_vline(
-        x=now.timestamp() * 1000,
-        line_width=2,
-        line_dash="dash",
-        line_color="red",
-        annotation_text="Current Time"
+    # Get current datetime for today
+    current_dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.now().time())
+
+    # Add a vertical line at the current time using add_shape
+    fig.add_shape(
+        type="line",
+        x0=current_dt,
+        x1=current_dt,
+        y0=0,
+        y1=1,
+        xref="x",
+        yref="paper",
+        line=dict(
+            color="red",
+            width=2,
+            dash="dash"
+        )
+    )
+
+    # Add an annotation to label the current time line
+    fig.add_annotation(
+        x=current_dt,
+        y=1,
+        xref="x",
+        yref="paper",
+        text="Current Time",
+        showarrow=False,
+        yanchor="bottom",
+        font=dict(color="red")
     )
 
     fig.update_layout(
@@ -77,37 +105,39 @@ def main():
         st.markdown("---")
 
     # --- Status Cards ---
-    df = get_schedule_data(meeting_day=datetime.datetime.now().strftime('%a'))
+    # Use abbreviated weekday name (e.g., "Mon", "Tue", etc.)
+    today_abbr = datetime.datetime.now().strftime('%a')
+    df = get_schedule_data(meeting_day=today_abbr)
     total_rooms = len(get_all_rooms())
-    now = datetime.datetime.now().time()
-    current_classes = df[(df['Start Time'] <= now) & (df['End Time'] >= now)]
+    now_time = datetime.datetime.now().time()
+    current_classes = df[(df['Start Time'] <= now_time) & (df['End Time'] >= now_time)]
     rooms_in_use = current_classes['Room'].nunique()
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">🏫 {}</div>
+            <div class="metric-value">🏫 {total_rooms}</div>
             <div class="metric-label">Total Rooms</div>
         </div>
-        """.format(total_rooms), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">📚 {}</div>
+            <div class="metric-value">📚 {rooms_in_use}</div>
             <div class="metric-label">Rooms in Use</div>
         </div>
-        """.format(rooms_in_use), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col3:
-        upcoming = df[df['Start Time'] > now].shape[0]
-        st.markdown("""
+        upcoming = df[df['Start Time'] > now_time].shape[0]
+        st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">⏭️ {}</div>
+            <div class="metric-value">⏭️ {upcoming}</div>
             <div class="metric-label">Upcoming Classes</div>
         </div>
-        """.format(upcoming), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     # --- Timeline Chart ---
     st.markdown("### Live Schedule Overview")

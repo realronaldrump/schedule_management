@@ -46,29 +46,29 @@ def main():
     # --- Filters in Sidebar ---
     with st.sidebar:
         st.header("🔍 Filters")
-        selected_day = st.selectbox("Select Day", ["All"] + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'])
+        selected_day = st.selectbox("Select Day", ["All", "Mon", "Tue", "Wed", "Thu", "Fri"])
         selected_rooms = st.multiselect("Select Rooms", get_all_rooms())
 
     # --- Current Room Status ---
     st.markdown("### Real-Time Room Status")
     
-    # Get current utilization data
-    today_day_name = datetime.datetime.now().strftime('%a')
-    df_today = get_schedule_data(meeting_day=today_day_name)
-    now = datetime.datetime.now().time()
+    # Get current utilization data (using abbreviated day)
+    today_abbr = datetime.datetime.now().strftime('%a')
+    df_today = get_schedule_data(meeting_day=today_abbr)
+    now_time = datetime.datetime.now().time()
     
     # Calculate room statuses
     all_rooms = get_all_rooms()
     current_classes = df_today[
-        (df_today['Start Time'] <= now) & 
-        (df_today['End Time'] >= now)
+        (df_today['Start Time'] <= now_time) & 
+        (df_today['End Time'] >= now_time)
     ]
     occupied_rooms = current_classes['Room'].unique().tolist()
     available_rooms = list(set(all_rooms) - set(occupied_rooms))
     
-    # Sort rooms naturally
-    occupied_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
-    available_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
+    # Sort rooms naturally (fallback to 0 if no digit)
+    occupied_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))) if ''.join(filter(str.isdigit, x)) else 0)
+    available_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))) if ''.join(filter(str.isdigit, x)) else 0)
 
     # Display room status columns
     col1, col2 = st.columns(2)
@@ -82,14 +82,16 @@ def main():
             with st.expander("View Occupied Rooms", expanded=True):
                 for room in occupied_rooms:
                     classes = current_classes[current_classes['Room'] == room]
-                    st.markdown(f"""
-                    **{room}**  
-                    {classes.iloc[0]['Start Time'].strftime('%I:%M %p')} - {classes.iloc[0]['End Time'].strftime('%I:%M %p')}  
-                    *{classes.iloc[0]['Course']} - {classes.iloc[0]['Course Title']}*  
-                    👩🏫 {classes.iloc[0]['Instructor']}
-                    """)
-                    if len(classes) > 1:
-                        st.caption(f"+ {len(classes)-1} more concurrent classes")
+                    if not classes.empty:
+                        class_info = classes.iloc[0]
+                        st.markdown(f"""
+                        **{room}**  
+                        {class_info['Start Time'].strftime('%I:%M %p')} - {class_info['End Time'].strftime('%I:%M %p')}  
+                        *{class_info['Course']} - {class_info['Course Title']}*  
+                        👩🏫 {class_info['Instructor']}
+                        """)
+                        if len(classes) > 1:
+                            st.caption(f"+ {len(classes)-1} more concurrent classes")
         else:
             st.info("No rooms currently in use")
 
@@ -103,7 +105,7 @@ def main():
             with st.expander("View Available Rooms", expanded=True):
                 cols = st.columns(3)
                 for i, room in enumerate(available_rooms):
-                    cols[i%3].markdown(f"🏫 {room}")
+                    cols[i % 3].markdown(f"🏫 {room}")
         else:
             st.warning("All rooms are currently occupied")
 

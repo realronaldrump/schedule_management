@@ -26,7 +26,7 @@ def main():
             if password == get_manager_password():
                 st.session_state.logged_in = True
                 st.sidebar.success("Logged in!")
-                st.rerun()  # Corrected line: Use st.rerun()
+                st.rerun()  # re-run after login
             else:
                 st.sidebar.error("Incorrect password")
         return  # Stop execution if not logged in

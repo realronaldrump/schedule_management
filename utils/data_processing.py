@@ -30,46 +30,49 @@ def load_and_process_data(uploaded_file) -> Optional[pd.DataFrame]:
         else:
             df = pd.read_excel(uploaded_file)
 
-        # Validate
+        # Validate required columns
         required_columns = {'Course', 'Course Title', 'Meeting Pattern', 
-                          'Meeting Time', 'Instructor', 'Room Number(s)'}
+                            'Meeting Time', 'Instructor', 'Room Number(s)'}
         if not required_columns.issubset(df.columns):
             missing = required_columns - set(df.columns)
             st.error(f"Missing required columns: {', '.join(missing)}")
             return None
 
-        # Clean
+        # Clean data: remove rows missing critical information and trim whitespace
         df = df.dropna(subset=['Meeting Pattern', 'Meeting Time', 'Room Number(s)'])
         df['Room Number(s)'] = df['Room Number(s)'].astype(str).str.strip()
         
-        # Expand
+        # Expand each row for multiple meeting days and multiple rooms
         expanded = []
         for _, row in df.iterrows():
             rooms = [r.strip() for r in str(row['Room Number(s)']).split(';')]
-            days = [d.strip().lower() for d in row['Meeting Pattern'].split(',')]
+            days = [d.strip().lower() for d in str(row['Meeting Pattern']).split(',')]
             
-            # Correctly parse the time range
-            if isinstance(row['Meeting Time'], str):
-                start_time_str, end_time_str = row['Meeting Time'].split('-')
+            # Strip meeting time and split into start/end times
+            meeting_time_str = str(row['Meeting Time']).strip()
+            if '-' in meeting_time_str:
+                start_time_str, end_time_str = meeting_time_str.split('-')
                 start_time = parse_time(start_time_str)
                 end_time = parse_time(end_time_str)
             else:
-                start_time = None
+                start_time = parse_time(meeting_time_str)
                 end_time = None
 
-            for day in days:
-                for room in rooms:
-                    if day in DAYS_MAP:
-                        new_row = row.to_dict()
-                        new_row['meeting_day'] = DAYS_MAP[day]
-                        new_row['room'] = room
-                        new_row['start_time'] = start_time
-                        new_row['end_time'] = end_time
-                        expanded.append(new_row)
+            # Only add row if both start_time and end_time are available
+            if start_time and end_time:
+                for day in days:
+                    for room in rooms:
+                        if day in DAYS_MAP:
+                            new_row = row.to_dict()
+                            new_row['meeting_day'] = DAYS_MAP[day]
+                            new_row['room'] = room
+                            new_row['start_time'] = start_time
+                            new_row['end_time'] = end_time
+                            expanded.append(new_row)
         
         df_expanded = pd.DataFrame(expanded)
         
-        # Cleanup and final columns
+        # Keep only the needed columns
         keep_columns = [
             'Course', 'Course Title', 'meeting_day',
             'start_time', 'end_time', 'Instructor', 'room'

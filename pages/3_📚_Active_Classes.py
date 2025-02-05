@@ -11,11 +11,12 @@ def main():
     df = get_schedule_data()
 
     # --- Filter for Active Classes ---
-    now = datetime.datetime.now().time()
+    now_time = datetime.datetime.now().time()
+    today_abbr = datetime.datetime.now().strftime('%a')
     active_classes = df[
-        (df['Meeting Day'] == datetime.datetime.now().strftime('%a')) &
-        (df['Start Time'] <= now) &
-        (df['End Time'] >= now)
+        (df['Meeting Day'] == today_abbr) &
+        (df['Start Time'] <= now_time) &
+        (df['End Time'] >= now_time)
     ]
 
     # --- Display Active Classes ---

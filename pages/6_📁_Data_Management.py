@@ -1,7 +1,6 @@
 import streamlit as st
 from utils.data_processing import load_and_process_data
 from utils.database import insert_data
-import os
 
 st.set_page_config(page_title="Data Management", page_icon="📁")
 
@@ -16,7 +15,7 @@ def main():
             if df is not None:
                 st.success(f"Loaded {len(df)} entries")
                 
-                # Convert time columns to strings
+                # Convert time columns to strings (to match the database schema format)
                 df['start_time'] = df['start_time'].apply(lambda x: x.strftime('%H:%M:%S') if x else None)
                 df['end_time'] = df['end_time'].apply(lambda x: x.strftime('%H:%M:%S') if x else None)
                 

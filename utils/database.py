@@ -27,13 +27,14 @@ def insert_data(df: pd.DataFrame) -> None:
     """Inserts data from a DataFrame into the database."""
     conn = sqlite3.connect(DATABASE_FILE)
     
-    # Rename columns to match database schema
+    # Rename columns to match the database schema
     df = df.rename(columns={
         'Course': 'course',
         'Course Title': 'course_title',
         'Instructor': 'instructor'
     })
     
+    # Replace existing data with the new dataset.
     df.to_sql('schedule', conn, if_exists='replace', index=False)
     conn.close()
 
@@ -62,11 +63,15 @@ def get_schedule_data(
 
     df = pd.read_sql_query(query, conn, params=params)
 
-    # Convert time columns and set timezone with explicit format
-    df['Start Time'] = pd.to_datetime(df['start_time'], format='%H:%M:%S').dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
-    df['End Time'] = pd.to_datetime(df['end_time'], format='%H:%M:%S').dt.tz_localize('UTC').dt.tz_convert('US/Central').dt.time
+    # Convert time strings back into time objects.
+    # Since the times in the DB are stored in '%H:%M:%S' format and are in US/Central,
+    # we directly localize them to US/Central.
+    df['Start Time'] = pd.to_datetime(df['start_time'], format='%H:%M:%S') \
+                         .dt.tz_localize('US/Central').dt.time
+    df['End Time'] = pd.to_datetime(df['end_time'], format='%H:%M:%S') \
+                         .dt.tz_localize('US/Central').dt.time
 
-    # Clean up column names for display
+    # Rename columns for display purposes.
     df = df.rename(columns={
         'course': 'Course',
         'course_title': 'Course Title',
