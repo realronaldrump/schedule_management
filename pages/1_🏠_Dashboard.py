@@ -1,18 +1,21 @@
 import streamlit as st
 import datetime
-from streamlit_autorefresh import st_autorefresh
-from utils.database import get_schedule_data, get_all_rooms
-import plotly.express as px
-import pandas as pd
 import pytz
+import pandas as pd
+import plotly.express as px
+from utils.database import get_schedule_data, get_all_rooms
+from streamlit_autorefresh import st_autorefresh
 
-# --- Configuration and Auto-Refresh ---
 st.set_page_config(page_title="Dashboard", page_icon="🏠")
 st_autorefresh(interval=10000, key="dashboard_refresh")
 
+# Helper to get current US/Central time
+def get_now_central():
+    central = pytz.timezone("US/Central")
+    return datetime.datetime.now(central)
+
 def get_current_time_and_week():
-    central = pytz.timezone('US/Central')
-    now = datetime.datetime.now(datetime.timezone.utc).astimezone(central)
+    now = get_now_central()
     return now.strftime("%I:%M %p"), now.strftime('%A, %b %d %Y'), now.isocalendar()[1]
 
 def create_timeline_chart(df: pd.DataFrame) -> None:
@@ -25,13 +28,14 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
     # Create an ordered list of rooms (sorted numerically if possible)
     room_order = sorted(df["Room"].unique(), key=lambda x: int(x) if x.isdigit() else x)
 
-    # Create datetime objects for today using the schedule times
-    base_date = datetime.date.today()
+    # Use US/Central time for today
+    now = get_now_central()
+    base_date = now.date()
+
     df = df.copy()
     df['Start'] = df['Start Time'].apply(lambda t: datetime.datetime.combine(base_date, t))
     df['End'] = df['End Time'].apply(lambda t: datetime.datetime.combine(base_date, t))
 
-    # Build the timeline chart with a forced category order for the y-axis
     fig = px.timeline(
         df,
         x_start="Start",
@@ -45,11 +49,11 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
         category_orders={"Room": room_order}
     )
 
-    # Force the y-axis to be categorical (this prevents Plotly from creating numeric ticks)
+    # Force the y-axis to be categorical using the room_order list
     fig.update_yaxes(type="category", categoryorder="array", categoryarray=room_order)
 
-    # Get current datetime for today
-    current_dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.now().time())
+    # Use our US/Central now for the vertical current-time marker
+    current_dt = now  # already in US/Central
 
     # Add a vertical line at the current time using add_shape
     fig.add_shape(
@@ -107,12 +111,14 @@ def main():
         st.title("Campus Dashboard")
         st.markdown("---")
 
+    # Use US/Central time for calculations
+    now = get_now_central()
+    today_abbr = now.strftime('%a')
+    
     # --- Status Cards ---
-    # Use abbreviated weekday name (e.g., "Mon", "Tue", etc.)
-    today_abbr = datetime.datetime.now().strftime('%a')
     df = get_schedule_data(meeting_day=today_abbr)
     total_rooms = len(get_all_rooms())
-    now_time = datetime.datetime.now().time()
+    now_time = now.time()
     current_classes = df[(df['Start Time'] <= now_time) & (df['End Time'] >= now_time)]
     rooms_in_use = current_classes['Room'].nunique()
     
