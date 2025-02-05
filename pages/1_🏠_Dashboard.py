@@ -20,18 +20,18 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
         st.warning("No schedule data for selected day")
         return
 
-    # Force the "Room" column to be treated as categorical by converting to string.
-    df['Room'] = df['Room'].astype(str)
+    # Ensure the Room column is treated as a string (discrete category)
+    df["Room"] = df["Room"].astype(str)
+    # Create an ordered list of rooms (sorted numerically if possible)
+    room_order = sorted(df["Room"].unique(), key=lambda x: int(x) if x.isdigit() else x)
 
-    # Create datetime objects for today using the times from the schedule
+    # Create datetime objects for today using the schedule times
     base_date = datetime.date.today()
     df = df.copy()
     df['Start'] = df['Start Time'].apply(lambda t: datetime.datetime.combine(base_date, t))
     df['End'] = df['End Time'].apply(lambda t: datetime.datetime.combine(base_date, t))
 
-    # Define category order for rooms, sorted numerically
-    room_categories = sorted(df['Room'].unique(), key=lambda x: int(x))
-
+    # Build the timeline chart with a forced category order for the y-axis
     fig = px.timeline(
         df,
         x_start="Start",
@@ -42,8 +42,11 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
         labels={'Room': 'Room Number'},
         hover_data=['Course Title', 'Instructor'],
         color_discrete_sequence=px.colors.qualitative.Pastel,
-        category_orders={"Room": room_categories}  # Use explicit categorical ordering.
+        category_orders={"Room": room_order}
     )
+
+    # Force the y-axis to be categorical (this prevents Plotly from creating numeric ticks)
+    fig.update_yaxes(type="category", categoryorder="array", categoryarray=room_order)
 
     # Get current datetime for today
     current_dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.now().time())

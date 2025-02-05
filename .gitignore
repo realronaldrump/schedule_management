@@ -1,5 +1,5 @@
 # Ignore database files
-# *.db
+
 
 # Ignore Python cache
 __pycache__/

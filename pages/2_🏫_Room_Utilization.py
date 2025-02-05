@@ -11,6 +11,10 @@ st_autorefresh(interval=10000, key="util_refresh")  # 10-second refresh
 def room_heatmap(df: pd.DataFrame) -> None:
     st.markdown("### Room Utilization Heatmap")
     
+    # Ensure the "Room" column is treated as a string (discrete category)
+    df["Room"] = df["Room"].astype(str)
+    
+    # Create a pivot table from the data
     heatmap_data = df.pivot_table(
         index='Room',
         columns='Meeting Day',
@@ -18,6 +22,11 @@ def room_heatmap(df: pd.DataFrame) -> None:
         aggfunc='count',
         fill_value=0
     )
+    
+    # Convert the pivot table index to strings (if not already) and order them
+    heatmap_data.index = heatmap_data.index.astype(str)
+    room_order = sorted(heatmap_data.index, key=lambda x: int(x) if x.isdigit() else x)
+    heatmap_data = heatmap_data.reindex(room_order)
     
     days_order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
     heatmap_data = heatmap_data.reindex(columns=days_order)
@@ -28,6 +37,9 @@ def room_heatmap(df: pd.DataFrame) -> None:
         color_continuous_scale='Blues',
         aspect="auto"
     )
+    
+    # Force the y-axis to be categorical using the room_order list
+    fig.update_yaxes(type="category", categoryorder="array", categoryarray=room_order)
     
     fig.update_layout(
         height=500,
@@ -66,17 +78,19 @@ def main():
     occupied_rooms = current_classes['Room'].unique().tolist()
     available_rooms = list(set(all_rooms) - set(occupied_rooms))
     
-    # Sort rooms naturally (fallback to 0 if no digit)
+    # Sort rooms naturally (fallback to 0 if no digit is found)
     occupied_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))) if ''.join(filter(str.isdigit, x)) else 0)
     available_rooms.sort(key=lambda x: int(''.join(filter(str.isdigit, x))) if ''.join(filter(str.isdigit, x)) else 0)
 
     # Display room status columns
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f'<div class="metric-card" style="background-color: #fee2e2;">'
-                    f'<div class="metric-value">🚫 {len(occupied_rooms)}</div>'
-                    f'<div class="metric-label">Occupied Rooms</div></div>', 
-                    unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="metric-card" style="background-color: #fee2e2;">'
+            f'<div class="metric-value">🚫 {len(occupied_rooms)}</div>'
+            f'<div class="metric-label">Occupied Rooms</div></div>', 
+            unsafe_allow_html=True
+        )
         
         if occupied_rooms:
             with st.expander("View Occupied Rooms", expanded=True):
@@ -96,10 +110,12 @@ def main():
             st.info("No rooms currently in use")
 
     with col2:
-        st.markdown(f'<div class="metric-card" style="background-color: #dcfce7;">'
-                    f'<div class="metric-value">✅ {len(available_rooms)}</div>'
-                    f'<div class="metric-label">Available Rooms</div></div>', 
-                    unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="metric-card" style="background-color: #dcfce7;">'
+            f'<div class="metric-value">✅ {len(available_rooms)}</div>'
+            f'<div class="metric-label">Available Rooms</div></div>', 
+            unsafe_allow_html=True
+        )
         
         if available_rooms:
             with st.expander("View Available Rooms", expanded=True):
@@ -109,30 +125,17 @@ def main():
         else:
             st.warning("All rooms are currently occupied")
 
-    # --- Historical Analysis Section ---
     st.markdown("---")
     st.markdown("### Historical Utilization Patterns")
     
-    # Load filtered data
+    # Load filtered data for historical analysis
     df_filtered = get_schedule_data(
         meeting_day=None if selected_day == "All" else selected_day,
         rooms=selected_rooms
     )
     
-    # Interactive Heatmap
+    # Display interactive heatmap using our room_heatmap function
     room_heatmap(df_filtered)
-
-    # Detailed Schedule
-    st.markdown("#### Detailed Schedule")
-    if not df_filtered.empty:
-        st.dataframe(
-            df_filtered[['Meeting Day', 'Room', 'Course', 'Instructor', 'Start Time', 'End Time']]
-            .sort_values(['Meeting Day', 'Start Time']),
-            use_container_width=True,
-            height=400
-        )
-    else:
-        st.info("No classes found for selected filters")
 
 if __name__ == "__main__":
     main()
