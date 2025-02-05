@@ -1,25 +1,28 @@
 import streamlit as st
 import datetime
+import pytz
 from utils.database import get_schedule_data
 
 st.set_page_config(page_title="Active Classes", page_icon="📚")
 
+def get_now_central():
+    central = pytz.timezone("US/Central")
+    return datetime.datetime.now(central)
+
 def main():
     st.title("📚 Active Classes")
-
-    # --- Load Data ---
     df = get_schedule_data()
-
-    # --- Filter for Active Classes ---
-    now_time = datetime.datetime.now().time()
-    today_abbr = datetime.datetime.now().strftime('%a')
+    
+    now = get_now_central()
+    now_time = now.time()
+    today_abbr = now.strftime('%a')
+    
     active_classes = df[
         (df['Meeting Day'] == today_abbr) &
         (df['Start Time'] <= now_time) &
         (df['End Time'] >= now_time)
     ]
-
-    # --- Display Active Classes ---
+    
     if active_classes.empty:
         st.warning("No active classes at the moment.")
     else:

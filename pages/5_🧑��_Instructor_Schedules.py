@@ -1,27 +1,30 @@
 import streamlit as st
 from utils.database import get_schedule_data, get_all_instructors
 import datetime
+import pytz
 
 st.set_page_config(page_title="Instructor Schedules", page_icon="🧑🏫")
 
+def get_now_central():
+    central = pytz.timezone("US/Central")
+    return datetime.datetime.now(central)
+
 def main():
     st.title("🧑🏫 Instructor Schedules")
-
-    # --- Select Instructor ---
+    
     instructors = get_all_instructors()
     if not instructors:
         st.info("No instructors found in the database.")
         return
     instructor = st.selectbox("Select Instructor", instructors)
-
-    # --- Display Schedule ---
+    
     df = get_schedule_data(instructor=instructor)
-
+    
     if not df.empty:
-        # --- Filters in Sidebar ---
+        now = get_now_central()
         with st.sidebar:
             st.header("Filters")
-            weekday = datetime.datetime.now().weekday()
+            weekday = now.weekday()
             default_day_index = weekday + 1 if weekday < 5 else 0
             selected_day = st.selectbox(
                 "Day",
@@ -29,7 +32,6 @@ def main():
                 index=default_day_index
             )
             
-        # --- Filter Data by Day and Instructor ---
         df = get_schedule_data(
             meeting_day=None if selected_day == "All" else selected_day[:3],
             instructor=instructor
