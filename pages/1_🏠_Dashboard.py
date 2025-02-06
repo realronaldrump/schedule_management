@@ -94,7 +94,8 @@ def create_timeline_chart(df: pd.DataFrame) -> None:
         hoverlabel=dict(
             bgcolor="white",
             font_size=14,
-            font_family="sans-serif"
+            font_family="sans-serif",
+            font_color="black"
         )
     )
     st.plotly_chart(fig, use_container_width=True)
