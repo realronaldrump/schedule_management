@@ -72,11 +72,12 @@ def main():
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
-            f'<div class="metric-card" style="background-color: #fee2e2;">'
-            f'<div class="metric-value">🚫 {len(occupied_rooms)}</div>'
-            f'<div class="metric-label">Occupied Rooms</div></div>',
+            f'<div class="metric-card" style="background-color: #fee2e2; color: #b91c1c;">'
+            f'<div class="metric-value" style="color: #b91c1c;">🚫 {len(occupied_rooms)}</div>'
+            f'<div class="metric-label" style="color: #7f1d1d;">Occupied Rooms</div></div>',
             unsafe_allow_html=True
         )
+
         if occupied_rooms:
             with st.expander("View Occupied Rooms", expanded=True):
                 for room in occupied_rooms:
@@ -95,10 +96,12 @@ def main():
             st.info("No rooms currently in use")
     with col2:
         st.markdown(
-            f'<div class="metric-card" style="background-color: #dcfce7;">'
-            f'<div class="metric-value">✅ {len(available_rooms)}</div>'
-            f'<div class="metric-label">Available Rooms</div></div>',
+            f'<div class="metric-card" style="background-color: #dcfce7; color: #065f46;">'  # Dark green text color
+            f'<div class="metric-value" style="color: #065f46;">✅ {len(available_rooms)}</div>'
+            f'<div class="metric-label" style="color: #064e3b;">Available Rooms</div></div>',
             unsafe_allow_html=True
+        )
+
         )
         if available_rooms:
             with st.expander("View Available Rooms", expanded=True):
