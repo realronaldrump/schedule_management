@@ -109,7 +109,7 @@ def main():
         st.markdown(f'<div class="time-display">{current_time}</div>', unsafe_allow_html=True)
         st.caption(f"📅 {current_date} | Week {week_number}")
     with col2:
-        st.title("Campus Dashboard")
+        st.title("Goebel Dashboard")
         st.markdown("---")
 
     # Use US/Central time for calculations
