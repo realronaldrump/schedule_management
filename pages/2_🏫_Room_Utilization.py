@@ -101,8 +101,6 @@ def main():
             f'<div class="metric-label" style="color: #064e3b;">Available Rooms</div></div>',
             unsafe_allow_html=True
         )
-
-        )
         if available_rooms:
             with st.expander("View Available Rooms", expanded=True):
                 cols = st.columns(3)
