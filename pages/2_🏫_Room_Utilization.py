@@ -110,7 +110,7 @@ def main():
             st.warning("All rooms are currently occupied")
 
     st.markdown("---")
-    st.markdown("### Historical Utilization Patterns")
+    st.markdown("### Weekly Patterns")
     
     df_filtered = get_schedule_data(meeting_day=None if selected_day=="All" else selected_day, rooms=selected_rooms)
     room_heatmap(df_filtered)
